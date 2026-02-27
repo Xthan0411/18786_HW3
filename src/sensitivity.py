@@ -191,6 +191,8 @@ def main():
             predictions = []
             for line in tqdm(open(args.eval_corpus_path, encoding='utf-8')):
                 x = line.split('\t')[0]
+                if x.startswith("Where was ") and x.endswith(" born?"):
+                    x = "What is the birthplace of " + x[10:-6] + "?"
                 x = x + '⁇'
                 x = torch.tensor([pretrain_dataset.stoi[s] for s in x],
                                 dtype=torch.long)[None,...].to(device)
