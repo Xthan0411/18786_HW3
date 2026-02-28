@@ -23,21 +23,38 @@ def main():
     with open(args.eval_corpus_path, 'r', encoding='utf-8') as f:
         lines = [line.strip().split('\t') for line in f]
 
+    # Load ground truth for debugging
+    true_places = [line[1] for line in lines]
+
     def predict(prompts):
         preds = []
         print(f"Generating responses for {len(prompts)} prompts...")
-        for p in tqdm(prompts):
-            #messages = [{"role": "user", "content": p}]
-            content = p + " Answer with only the location name."
+        for i, p in tqdm(enumerate(prompts), total=len(prompts)):
+            content = p + " Answer with the city or country name only. Do not write a sentence."
             messages = [{"role": "user", "content": content}]
             outputs = pipe(messages, max_new_tokens=50, do_sample=False)
             try:
                 generated_text = outputs[0]["generated_text"][-1]["content"]
             except (KeyError, IndexError):
                 generated_text = ""
-            #preds.append(generated_text.strip())
             
-            pred = generated_text.strip().split('\n')[0].rstrip('.')
+            # Enhanced cleaning logic
+            pred = generated_text.strip()
+            # Remove common prefixes if the model ignores instructions
+            for prefix in ["The answer is ", "The birthplace is ", "He was born in ", "She was born in ", "It is "]:
+                if pred.lower().startswith(prefix.lower()):
+                    pred = pred[len(prefix):]
+            
+            pred = pred.split('\n')[0] # Take first line
+            pred = pred.split(',')[0]  # Remove country if format is "City, Country" (e.g. "London, UK" -> "London")
+            pred = pred.strip().rstrip('.') # Remove trailing dots and spaces
+            
+            # Debug print for the first 5 examples to see what's going wrong
+            if i < 5:
+                print(f"\n[Debug] Q: {p}")
+                print(f"[Debug] Raw: {generated_text}")
+                print(f"[Debug] Cleaned: {pred} | Expected: {true_places[i]}")
+
             preds.append(pred)
         return preds
 
