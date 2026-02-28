@@ -32,12 +32,16 @@ def main():
         for i, p in tqdm(enumerate(prompts), total=len(prompts)):
             content = p + " Answer with the city or country name only. Do not write a sentence."
             messages = [{"role": "user", "content": content}]
-            outputs = pipe(messages, max_new_tokens=50, do_sample=False)
+            outputs = pipe(messages, max_new_tokens=512, do_sample=False)
             try:
                 generated_text = outputs[0]["generated_text"][-1]["content"]
             except (KeyError, IndexError):
                 generated_text = ""
             
+            # Remove <think>...</think> block if present
+            if "</think>" in generated_text:
+                generated_text = generated_text.split("</think>")[-1]
+
             # Enhanced cleaning logic
             pred = generated_text.strip()
             # Remove common prefixes if the model ignores instructions
