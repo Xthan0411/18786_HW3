@@ -1,0 +1,9 @@
+expt/
+*.params
+*.predictions
+*.tfevents.*
+
+__pycache__/
+*.pyc
+
+.DS_Store
